@@ -12,7 +12,7 @@ export default function AiAssistant() {
   const [conversation, setConversation] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hello! I\'m your AI assistant. I can help you analyze your productivity, suggest improvements, and provide insights on your progress. What would you like to know today?'
+      content: 'Hello! I\'m Bob, how can i help you today?'
     }
   ]);
 
@@ -44,8 +44,12 @@ export default function AiAssistant() {
   const sendMessage = async () => {
     if (!query.trim()) return;
     
-    const userMessage: Message = { role: 'user', content: query };
-    setConversation(prev => [...prev, userMessage]);
+    const userMessage: Message = {
+      role: 'user',
+      content: query
+    };
+    
+    setConversation([...conversation, userMessage]);
     setQuery('');
     setLoading(true);
     
@@ -53,8 +57,8 @@ export default function AiAssistant() {
       const response = await sendMessageToAssistant([...conversation, userMessage]);
       setConversation(prev => [...prev, response]);
     } catch (error) {
-      toast.error('Failed to get response from AI assistant');
       console.error('Error:', error);
+      toast.error('Failed to get response from StriveBot. Please try again.');
     } finally {
       setLoading(false);
     }

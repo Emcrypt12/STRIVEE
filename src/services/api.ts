@@ -14,12 +14,12 @@ export interface ChatbotResponse {
 }
 
 export interface StreamChunk {
-  content: string;
+  content?: string;
   title?: string;
   done?: boolean;
 }
 
-export const sendMessageToAssistant = async (messages: Message[]) => {
+export const sendMessageToAssistant = async (messages: Message[]): Promise<Message> => {
   try {
     const response = await axios.post(`${API_URL}/assistant`, { messages });
     return response.data;
@@ -30,10 +30,10 @@ export const sendMessageToAssistant = async (messages: Message[]) => {
 };
 
 export const sendMessageToChatbot = async (
-  messages: Message[], 
-  isNewConversation: boolean = false,
+  messages: Message[],
+  isNewConversation: boolean,
   onChunk: (chunk: StreamChunk) => void
-) => {
+): Promise<void> => {
   try {
     const response = await fetch(`${API_URL}/chatbot`, {
       method: 'POST',
@@ -43,24 +43,34 @@ export const sendMessageToChatbot = async (
       body: JSON.stringify({ messages, isNewConversation }),
     });
 
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
+    const reader = response.body?.getReader();
     if (!reader) {
       throw new Error('No reader available');
     }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(6));
-          onChunk(data);
+          try {
+            const data = JSON.parse(line.slice(6));
+            onChunk(data);
+          } catch (e) {
+            console.error('Error parsing chunk:', e);
+          }
         }
       }
     }

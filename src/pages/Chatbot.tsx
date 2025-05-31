@@ -19,7 +19,7 @@ export default function Chatbot() {
       messages: [
         {
           role: 'assistant',
-          content: 'Hello! I\'m StriveBot, your productivity assistant. How can I help you today?'
+          content: 'Hello! I\'m Bob, your productivity assistant. How can I help you today?'
         }
       ],
       lastUpdated: new Date()
@@ -110,8 +110,18 @@ export default function Chatbot() {
         }
       );
     } catch (error) {
-      toast.error('Failed to get response from chatbot');
       console.error('Error:', error);
+      toast.error('Failed to get response from StriveBot. Please try again.');
+      // Remove the empty assistant message if there was an error
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === activeConversationId) {
+          return {
+            ...conv,
+            messages: conv.messages.filter(msg => msg.content !== '')
+          };
+        }
+        return conv;
+      }));
     } finally {
       setLoading(false);
     }
