@@ -5,6 +5,7 @@ import { format, differenceInDays, isSameDay, isToday } from 'date-fns';
 import Chart from 'react-apexcharts';
 import Confetti from 'react-confetti';
 import toast from 'react-hot-toast';
+import { CheckinData } from '../components/DailyCheckin';
 
 interface DailyCheckin {
   date: string;
@@ -842,6 +843,7 @@ export default function Tasks() {
 
                     {Object.entries(task.dailyProgress).map(([date, progress]) => (
                       <div key={date} className="border-t border-gray-100 pt-4">
+                        
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 text-gray-400 mr-2" />
