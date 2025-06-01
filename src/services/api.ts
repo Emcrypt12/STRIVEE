@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -111,4 +111,4 @@ export const sendMessageToChatbot = async (
     console.error('Error sending message to chatbot:', error);
     throw error;
   }
-}; 
+};
