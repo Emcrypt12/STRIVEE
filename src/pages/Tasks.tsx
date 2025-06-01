@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, CheckCircle, Calendar, Clock, Edit2, Trash2, ChevronDown, ChevronUp, BookOpen, Trophy, Star, Target, Award, TrendingUp, Zap, CheckSquare } from 'lucide-react';
+import { Plus, CheckCircle, Calendar, Clock, Edit2, Trash2, ChevronDown, ChevronUp, BookOpen, Trophy, Star, Target, Award, TrendingUp, Zap, CheckSquare, Save } from 'lucide-react';
 import { format, differenceInDays, isSameDay, isToday } from 'date-fns';
 import Chart from 'react-apexcharts';
 import Confetti from 'react-confetti';
@@ -136,6 +136,7 @@ export default function Tasks() {
     description: '',
     category: 'Learning'
   });
+  const [editingNote, setEditingNote] = useState<{taskId: string, date: string, note: string} | null>(null);
 
   const calculateLevel = (xp: number) => {
     return Math.floor(Math.sqrt(xp / 100)) + 1;
@@ -271,33 +272,39 @@ export default function Tasks() {
   };
 
   const updateTaskNote = (taskId: string, date: string, note: string) => {
-    setTasks(tasks.map(task => {
-      if (task.id === taskId) {
-        const wasDetailed = task.dailyProgress[date].notes.length > 50;
-        const isNowDetailed = note.length > 50;
-        const xpChange = !wasDetailed && isNowDetailed ? XP_DETAILED_NOTES : 0;
+    if (editingNote?.taskId === taskId && editingNote?.date === date) {
+      setTasks(tasks.map(task => {
+        if (task.id === taskId) {
+          const wasDetailed = task.dailyProgress[date].notes.length > 50;
+          const isNowDetailed = note.length > 50;
+          const xpChange = !wasDetailed && isNowDetailed ? XP_DETAILED_NOTES : 0;
 
-        const updatedTask = {
-          ...task,
-          xp: task.xp + xpChange,
-          dailyProgress: {
-            ...task.dailyProgress,
-            [date]: {
-              ...task.dailyProgress[date],
-              notes: note,
-              xpEarned: task.dailyProgress[date].xpEarned + xpChange
+          const updatedTask = {
+            ...task,
+            xp: task.xp + xpChange,
+            dailyProgress: {
+              ...task.dailyProgress,
+              [date]: {
+                ...task.dailyProgress[date],
+                notes: note,
+                xpEarned: task.dailyProgress[date].xpEarned + xpChange
+              }
             }
+          };
+
+          if (xpChange > 0) {
+            toast.success('🌟 Bonus XP earned for detailed notes!');
           }
-        };
 
-        if (xpChange > 0) {
-          toast.success('🌟 Bonus XP earned for detailed notes!');
+          return checkAndAwardBadges(updatedTask);
         }
-
-        return checkAndAwardBadges(updatedTask);
-      }
-      return task;
-    }));
+        return task;
+      }));
+      setEditingNote(null);
+      toast.success('Note saved successfully!');
+    } else {
+      setEditingNote({ taskId, date, note });
+    }
   };
 
   const toggleTaskExpansion = (taskId: string) => {
@@ -587,18 +594,18 @@ export default function Tasks() {
               </div>
             )}
           </div>
-        ) : isCurrentDay ? (
+        ) : (
           <button
             onClick={() => {
               setSelectedTaskId(task.id);
               setShowCheckin(true);
             }}
-            className="mt-2 text-sm text-primary-600 hover:text-primary-700 flex items-center"
+            className="w-full mt-2 text-sm bg-primary-50 text-primary-600 hover:bg-primary-100 py-2 px-4 rounded-md flex items-center justify-center transition-colors duration-200"
           >
             <Plus className="h-4 w-4 mr-1" />
-            Add Daily Check-in
+            Complete Daily Check-in
           </button>
-        ) : null}
+        )}
       </div>
     );
   };
@@ -842,6 +849,7 @@ export default function Tasks() {
                               {format(new Date(date), 'MMM dd, yyyy')}
                             </span>
                           </div>
+                
                           <button
                             onClick={() => toggleTaskCompletion(task.id, date)}
                             className={`flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200 ${
@@ -855,21 +863,39 @@ export default function Tasks() {
                           </button>
                         </div>
                         <div className="mt-2">
-                          <textarea
-                            value={progress.notes}
-                            onChange={(e) => updateTaskNote(task.id, date, e.target.value)}
-                            placeholder="Add notes about your progress..."
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            rows={2}
-                          />
+                          <div className="flex items-start space-x-2">
+                            <textarea
+                              value={editingNote?.taskId === task.id && editingNote?.date === date ? editingNote.note : progress.notes}
+                              onChange={(e) => {
+                                if (editingNote?.taskId === task.id && editingNote?.date === date) {
+                                  setEditingNote({ ...editingNote, note: e.target.value });
+                                } else {
+                                  setEditingNote({ taskId: task.id, date: date, note: e.target.value });
+                                }
+                              }}
+                              placeholder="Add notes about your progress..."
+                              className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              rows={2}
+                            />
+                            <button
+                              onClick={() => updateTaskNote(task.id, date, editingNote?.note || progress.notes)}
+                              className="flex-shrink-0 px-3 py-2 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-md transition-colors duration-200"
+                            >
+                              {editingNote?.taskId === task.id && editingNote?.date === date ? (
+                                <Save className="h-5 w-5" />
+                              ) : (
+                                <Edit2 className="h-5 w-5" />
+                              )}
+                            </button>
+                          </div>
                           {progress.xpEarned > 0 && (
                             <div className="mt-1 text-xs text-success-600 flex items-center">
                               <Zap className="h-3 w-3 mr-1" />
                               Earned {progress.xpEarned} XP
                             </div>
                           )}
+                          {renderTaskCheckin(task, date)}
                         </div>
-                        {renderTaskCheckin(task, date)}
                       </div>
                     ))}
                   </div>
@@ -899,3 +925,5 @@ export default function Tasks() {
     </div>
   );
 }
+
+export default Tasks
