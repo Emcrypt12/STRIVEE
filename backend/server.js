@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const { getAssistantResponse, getChatbotResponse, handleStream } = require('./langchain');
+const { getChatbotResponse, handleStream: handleChatbotStream } = require('./langchain');
+const { getAssistantResponse, handleStream: handleAssistantStream } = require('./assistant');
 
 // Load environment variables from .env file
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -23,8 +24,14 @@ app.use(express.json());
 app.post('/api/assistant', async (req, res) => {
   try {
     const { messages } = req.body;
-    const response = await getAssistantResponse(messages);
-    res.json(response);
+    
+    // Set up streaming response
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const { stream } = await getAssistantResponse(messages);
+    await handleAssistantStream(stream, res);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Failed to get AI response' });
@@ -42,7 +49,7 @@ app.post('/api/chatbot', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     const { stream, title } = await getChatbotResponse(messages, isNewConversation);
-    await handleStream(stream, res, title);
+    await handleChatbotStream(stream, res, title);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Failed to get AI response' });

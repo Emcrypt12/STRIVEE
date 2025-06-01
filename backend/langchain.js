@@ -19,27 +19,6 @@ const openai = new OpenAI({
 // Helper function to add delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// AI Assistant function
-async function getAssistantResponse(messages) {
-  const completion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: "You are a productivity assistant that helps users improve their work efficiency and time management. Provide specific, actionable advice based on their questions. Always format your responses with clear bullet points or numbered lists for better readability."
-      },
-      ...messages
-    ],
-    temperature: 0.7,
-    max_tokens: 400
-  });
-
-  return { 
-    role: 'assistant',
-    content: completion.choices[0].message.content 
-  };
-}
-
 // Chatbot function
 async function getChatbotResponse(messages, isNewConversation) {
   // If it's a new conversation, generate a title based on the first message
@@ -122,7 +101,6 @@ async function handleStream(stream, res, title) {
 }
 
 module.exports = {
-  getAssistantResponse,
   getChatbotResponse,
   handleStream
 }; 

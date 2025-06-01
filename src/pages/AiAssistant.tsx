@@ -1,21 +1,10 @@
-import { useState } from 'react';
-import { Bot, Zap, TrendingUp, Clock, AlertTriangle, Calendar, Send } from 'lucide-react';
+import { Zap, TrendingUp, Clock, AlertTriangle, Calendar } from 'lucide-react';
 import { Tab } from '@headlessui/react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
-import { sendMessageToAssistant, Message } from '../services/api';
-import toast from 'react-hot-toast';
+import AiAssistantChat from '../components/AiAssistantChat';
 
 export default function AiAssistant() {
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [conversation, setConversation] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: 'Hello! I\'m Bob, how can i help you today?'
-    }
-  ]);
-
   // Sample productivity data for visualization
   const productivityScores = [78, 65, 83, 79, 92, 86, 75];
   const productivityTrend: ApexOptions = {
@@ -41,29 +30,6 @@ export default function AiAssistant() {
     }
   };
 
-  const sendMessage = async () => {
-    if (!query.trim()) return;
-    
-    const userMessage: Message = {
-      role: 'user',
-      content: query
-    };
-    
-    setConversation([...conversation, userMessage]);
-    setQuery('');
-    setLoading(true);
-    
-    try {
-      const response = await sendMessageToAssistant([...conversation, userMessage]);
-      setConversation(prev => [...prev, response]);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to get response from StriveBot. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -72,69 +38,8 @@ export default function AiAssistant() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI Chat Interface */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[600px]">
-          <div className="p-4 bg-primary-50 border-b border-gray-100">
-            <div className="flex items-center">
-              <div className="bg-primary-100 rounded-full p-2">
-                <Bot className="h-6 w-6 text-primary-600" />
-              </div>
-              <div className="ml-3">
-                <h3 className="font-medium text-gray-900">AI Assistant</h3>
-                <p className="text-xs text-gray-600">Powered by AI</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {conversation.map((message, index) => (
-              <div 
-                key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div 
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.role === 'user' 
-                      ? 'bg-primary-600 text-white' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  <p className="text-sm">{message.content}</p>
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '600ms' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="p-4 border-t border-gray-100">
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask for productivity insights or suggestions..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                disabled={loading}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={loading || !query.trim()}
-                className="bg-primary-600 text-white p-2 rounded-r-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
+        <div className="lg:col-span-2">
+          <AiAssistantChat />
         </div>
 
         {/* AI Insights Panel */}
