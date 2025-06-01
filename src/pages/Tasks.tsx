@@ -925,5 +925,3 @@ export default function Tasks() {
     </div>
   );
 }
-
-export default Tasks
